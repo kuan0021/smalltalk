@@ -1,0 +1,935 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EFF2F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121615" media="(prefers-color-scheme: dark)">
+<meta name="description" content="213 道聊天話題，依關係深度分七層，點一下隨機抽一題。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="話題">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png">
+<title>隨機話題產生器</title>
+<style>
+  :root { color-scheme: light dark; padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px); }
+  html, body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<style>
+  :root {
+    --bg: #EFF2F1;
+    --surface: #FFFFFF;
+    --surface-2: #E4E9E7;
+    --ink: #171B1A;
+    --ink-2: #5C6663;
+    --ink-3: #8A9490;
+    --line: #D6DCDA;
+    --line-2: #C3CBC8;
+    --gold: #9A7420;
+    --gold-bg: #F4EBD4;
+    --shadow: 0 1px 2px rgba(20,30,28,.05), 0 8px 24px -12px rgba(20,30,28,.16);
+    --lv1: #0F7B62; --lv2: #1C6E93; --lv3: #3D5FA8;
+    --lv4: #6A54A3; --lv5: #98468E; --lv6: #B03F6B; --lv7: #A82F45;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", -apple-system, system-ui, sans-serif;
+    --serif: "Songti TC", "Noto Serif TC", "Source Han Serif TC", "PingFang TC", Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121615; --surface: #1C2120; --surface-2: #262C2A;
+      --ink: #E9EEEC; --ink-2: #9BA5A1; --ink-3: #6E7874;
+      --line: #2C3331; --line-2: #3A4240;
+      --gold: #D9B457; --gold-bg: #332C15;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.6);
+      --lv1: #3FBFA2; --lv2: #5FB4D8; --lv3: #8298E8;
+      --lv4: #B092E4; --lv5: #DC8AD2; --lv6: #EE88A8; --lv7: #F0798C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121615; --surface: #1C2120; --surface-2: #262C2A;
+    --ink: #E9EEEC; --ink-2: #9BA5A1; --ink-3: #6E7874;
+    --line: #2C3331; --line-2: #3A4240;
+    --gold: #D9B457; --gold-bg: #332C15;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -14px rgba(0,0,0,.6);
+    --lv1: #3FBFA2; --lv2: #5FB4D8; --lv3: #8298E8;
+    --lv4: #B092E4; --lv5: #DC8AD2; --lv6: #EE88A8; --lv7: #F0798C;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app {
+    height: 100%; display: flex; flex-direction: column;
+    max-width: 560px; margin: 0 auto; padding: 0 16px;
+  }
+
+  /* ---------- header ---------- */
+  header { padding-block: 14px 8px; }
+  .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .brand h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .04em; }
+  .brand .ver {
+    appearance: none; cursor: pointer;
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+    background: transparent; border: 1px solid var(--line-2); border-radius: 3px;
+    padding: 4px 7px; line-height: 1; transition: color .15s, border-color .15s;
+  }
+  .brand .ver:active { background: var(--surface-2); }
+  .brand .ver:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .brand .count {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums; margin-left: auto;
+  }
+
+  .levels { display: flex; flex-wrap: wrap; gap: 5px; transition: opacity .2s; }
+  .levels.off { opacity: .3; pointer-events: none; }
+  .chip {
+    appearance: none; border: 1px solid var(--line-2);
+    background: transparent; color: var(--ink-2);
+    font-family: var(--sans); font-size: 11.5px; line-height: 1;
+    padding: 7px 9px 7px 7px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); opacity: .35; transition: opacity .15s; }
+  .chip .lv { font-family: var(--mono); font-size: 10.5px; }
+  .chip[aria-pressed="true"] { color: var(--ink); border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); }
+  .chip[aria-pressed="true"] .dot { opacity: 1; }
+  .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .utils { display: flex; gap: 8px; margin-top: 9px; }
+  .util {
+    appearance: none; cursor: pointer; flex: 1 1 0; min-height: 40px;
+    background: var(--surface-2); border: 1px solid transparent; border-radius: 5px;
+    color: var(--ink-2); font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .util:active { background: var(--line); }
+  .util:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .util svg { flex: 0 0 auto; opacity: .7; }
+  .util[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--lv1) 14%, transparent);
+    border-color: var(--lv1); color: var(--lv1);
+  }
+  .util[aria-pressed="true"] svg { opacity: 1; }
+
+  .status {
+    display: flex; align-items: center; gap: 10px; margin-top: 8px;
+    font-size: 11px; color: var(--ink-3); line-height: 1.5;
+  }
+  .status button {
+    appearance: none; background: transparent; border: 0; padding: 0;
+    font-family: var(--sans); font-size: 11px; color: var(--ink-2); cursor: pointer;
+    border-bottom: 1px solid var(--line-2);
+  }
+
+  /* ---------- card ---------- */
+  main { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; padding-block: 10px; }
+  .card {
+    flex: 1 1 auto; display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+    box-shadow: var(--shadow); padding: 18px 18px 12px;
+    cursor: pointer; position: relative; overflow: hidden; min-height: 250px;
+  }
+  .card::before {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 3px;
+    background: var(--c, var(--line-2)); transition: background .25s;
+  }
+  .card:active { transform: translateY(1px); }
+
+  .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--c); font-weight: 500; }
+  .badge b { font-family: var(--sans); font-weight: 600; letter-spacing: 0; margin-left: 4px; }
+  .tag { font-size: 11px; color: var(--ink-3); border: 1px solid var(--line); border-radius: 3px; padding: 2px 6px; }
+  .note { margin: 6px 0 0; font-size: 11.5px; color: var(--ink-3); line-height: 1.5; }
+
+  .q {
+    flex: 1 1 auto; display: flex; align-items: center;
+    font-family: var(--serif); font-size: clamp(20px, 5.4vw, 29px);
+    line-height: 1.58; padding-block: 18px; text-wrap: pretty; overflow-y: auto;
+  }
+  .follow {
+    font-size: 13.5px; color: var(--ink); line-height: 1.6; margin: 0;
+    background: color-mix(in srgb, var(--c) 8%, transparent);
+    border-left: 2px solid var(--c);
+    border-radius: 0 4px 4px 0; padding: 9px 12px;
+  }
+  .follow span {
+    display: block; font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: .14em; color: var(--c); margin-bottom: 4px;
+  }
+
+  .cardfoot {
+    display: flex; align-items: center; gap: 8px; margin-top: 10px;
+    border-top: 1px solid var(--line); padding-top: 8px;
+  }
+  .act {
+    appearance: none; cursor: pointer; background: transparent;
+    border: 1px solid var(--line); border-radius: 4px; color: var(--ink-3);
+    font-family: var(--sans); font-size: 11.5px; min-height: 32px; padding: 0 10px;
+    display: inline-flex; align-items: center; gap: 4px; transition: all .15s;
+  }
+  .act:active { background: var(--surface-2); }
+  .act:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  #fav[aria-pressed="true"] { color: var(--gold); border-color: var(--gold); background: var(--gold-bg); }
+  .swipe { flex: 1 1 auto; text-align: center; font-size: 10.5px; color: var(--ink-3); }
+
+  .anim { animation: rise .26s cubic-bezier(.2,.7,.3,1); }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .anim { animation: none; } .card:active { transform: none; } }
+
+  /* ---------- footer ---------- */
+  footer {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .row { display: flex; gap: 8px; }
+  .draw {
+    flex: 1 1 auto; appearance: none; border: 0; cursor: pointer;
+    background: var(--ink); color: var(--bg);
+    font-family: var(--sans); font-size: 15px; font-weight: 600; letter-spacing: .08em;
+    padding: 15px; border-radius: 5px; transition: opacity .15s;
+  }
+  .draw:active { opacity: .82; }
+  .draw:focus-visible { outline: 2px solid var(--lv3); outline-offset: 2px; }
+  .back {
+    appearance: none; cursor: pointer; background: transparent;
+    border: 1px solid var(--line-2); color: var(--ink-2);
+    border-radius: 5px; width: 50px; display: grid; place-items: center;
+  }
+  .back:disabled { opacity: .35; cursor: default; }
+  .tip { font-size: 11.5px; color: var(--ink-3); line-height: 1.6; border-top: 1px solid var(--line); padding-top: 10px; margin: 0; }
+  .tip b { color: var(--ink-2); font-weight: 600; }
+  .empty { color: var(--ink-3); font-family: var(--sans); font-size: 16px; }
+
+  /* ---------- sheet ---------- */
+  .sheetwrap { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+  .backdrop { position: absolute; inset: 0; background: rgba(8,12,11,.5); animation: fade .2s; }
+  .sheet {
+    position: relative; width: 100%; max-width: 560px; max-height: 86vh;
+    background: var(--surface); border-radius: 10px 10px 0 0;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 -8px 40px -12px rgba(0,0,0,.4);
+    animation: slideup .26s cubic-bezier(.2,.7,.3,1);
+  }
+  @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideup { from { transform: translateY(14px); opacity: .4 } to { transform: none; opacity: 1 } }
+  @media (prefers-reduced-motion: reduce) { .backdrop, .sheet { animation: none } }
+
+  .sheethead {
+    display: flex; align-items: center; gap: 9px;
+    padding: 15px 18px 13px; border-bottom: 1px solid var(--line); flex: 0 0 auto;
+  }
+  .sheethead h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .03em; }
+  .sheethead .now { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+  .sheethead .x {
+    margin-left: auto; appearance: none; cursor: pointer; background: transparent;
+    border: 0; color: var(--ink-3); width: 34px; height: 34px; margin-right: -8px;
+    display: grid; place-items: center; border-radius: 4px;
+  }
+  .sheethead .x:active { background: var(--surface-2); }
+  .sheetbody {
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 16px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+  .sh {
+    margin: 0 0 10px; font-size: 10.5px; font-weight: 600; letter-spacing: .12em;
+    color: var(--ink-3); text-transform: uppercase; font-family: var(--mono);
+  }
+  .sh + .sh, .block + .block { margin-top: 0; }
+  .block { margin-bottom: 18px; }
+  .block:last-child { margin-bottom: 0; }
+
+  details > summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    margin-bottom: 8px; user-select: none;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::after {
+    content: ""; width: 6px; height: 6px; margin-left: 2px;
+    border-right: 1.4px solid var(--ink-3); border-bottom: 1.4px solid var(--ink-3);
+    transform: rotate(45deg) translate(-2px, -2px); transition: transform .18s;
+  }
+  details[open] > summary::after { transform: rotate(-135deg) translate(-1px, -1px); }
+  details > summary .sh { margin: 0; }
+  details > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 2px; }
+
+  .tiles { display: flex; gap: 8px; }
+  .tile {
+    flex: 1 1 0; background: var(--surface-2); border-radius: 5px; padding: 10px 11px;
+  }
+  .tile b {
+    display: block; font-family: var(--mono); font-size: 21px; font-weight: 500;
+    font-variant-numeric: tabular-nums; line-height: 1.2; color: var(--ink);
+  }
+  .tile span { font-size: 10.5px; color: var(--ink-3); }
+
+  .dist { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .dist i {
+    font-style: normal; font-family: var(--mono); font-size: 11px;
+    font-variant-numeric: tabular-nums; color: var(--ink-2);
+    border: 1px solid var(--line); border-radius: 3px; padding: 3px 6px;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .dist i::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+
+  .qlist { list-style: none; margin: 0; padding: 0; }
+  .qlist li {
+    display: flex; gap: 7px; align-items: baseline;
+    font-size: 12px; line-height: 1.4; padding: 3.5px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .qlist li:last-child { border-bottom: 0; }
+  .qlist .l {
+    flex: 0 0 auto; font-family: var(--mono); font-size: 10px; color: var(--c);
+    border: 1px solid currentColor; border-radius: 2px; padding: 1px 3px; opacity: .85;
+  }
+  .none { font-size: 12px; color: var(--ink-3); margin: 0; line-height: 1.6; }
+
+  .log { list-style: none; margin: 0; padding: 0; }
+  .log li { padding: 9px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; }
+  .log li:last-child { border-bottom: 0; }
+  .log .v {
+    flex: 0 0 34px; font-family: var(--mono); font-size: 11px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .log .v.cur { color: var(--lv1); font-weight: 500; }
+  .log .d { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+
+  .danger {
+    appearance: none; cursor: pointer; background: transparent;
+    border: 1px solid var(--line-2); border-radius: 4px; color: var(--ink-3);
+    font-family: var(--sans); font-size: 11.5px; padding: 8px 12px; margin-top: 10px;
+  }
+  .danger:active { background: var(--surface-2); }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>隨機話題產生器</h1>
+      <button class="ver" id="ver" type="button" aria-haspopup="dialog"></button>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="levels" id="levels"></div>
+    <div class="utils">
+      <button class="util" id="ice" type="button" aria-pressed="false">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M6.5 1v11M2 3.8l9 5.4M11 3.8l-9 5.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>破冰模式
+      </button>
+      <button class="util" id="all" type="button">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M2 6.5 5 9.5l6-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg><span id="allLabel">全部開啟</span>
+      </button>
+      <button class="util" id="reset" type="button">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M11 6.5a4.5 4.5 0 1 1-1.35-3.2M11 1.4v3.2H7.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>重新洗牌
+      </button>
+    </div>
+    <div class="status" id="status" hidden>
+      <span id="statusText"></span>
+      <button type="button" id="restore">復原</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card" id="card">
+      <div class="meta">
+        <span class="badge" id="badge"></span>
+        <span class="tag" id="tag"></span>
+      </div>
+      <p class="note" id="note"></p>
+      <div class="q" id="q" aria-live="polite"><span class="empty">載入中…<br><span style="font-size:12.5px;line-height:1.7;display:inline-block;margin-top:10px">如果這行字一直沒消失，表示目前開啟這個檔案的程式沒有執行 JavaScript（iOS 的檔案預覽就是這樣）。請改用 Safari 或 Chrome 開啟。</span></span></div>
+      <p class="follow" id="follow"></p>
+      <div class="cardfoot">
+        <button class="act" id="skip" type="button">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M2.5 2.5l6 6M8.5 2.5l-6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>不要這題
+        </button>
+        <span class="swipe">點卡片換下一題</span>
+        <button class="act" id="fav" type="button" aria-pressed="false">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z"/>
+          </svg>好用
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="row">
+      <button class="back" id="back" disabled aria-label="回上一題">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="draw" id="draw">抽 一 題</button>
+    </div>
+    <p class="tip"><b>用法提醒</b>　問之前先講自己的看法：「我覺得○○，你呢？」——這比一問一答有效得多。一次一題，不要連發。</p>
+  </footer>
+</div>
+
+<div class="sheetwrap" id="sheetwrap" hidden>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="使用統計與版本紀錄">
+    <div class="sheethead">
+      <h2>使用統計</h2>
+      <span class="now" id="now"></span>
+      <button class="x" id="closeSheet" type="button" aria-label="關閉">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+          <path d="M3.5 3.5l8 8M11.5 3.5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="sheetbody" id="sheetbody"></div>
+  </div>
+</div>
+
+<script>
+const VERSION = "1.9";
+
+const CHANGELOG = [
+  ["1.9", "改名為隨機話題產生器。單檔版加上 UTF-8 BOM，並在 JavaScript 沒被執行時顯示說明而非空白。"],
+  ["1.8", "修正：統計面板與「復原」在獨立 HTML 檔中不會隱藏。另外產出可離線使用的手機版單檔。"],
+  ["1.7", "L6 補到 20 題（婚後與長輩同住）、L7 補到 20 題（新增 7 題偏溝通與界線，而非動作）。"],
+  ["1.6", "題庫 137 → 205。補上原本完全缺席的輕鬆題（好玩 27、當下 6、假設 9），加入改寫自 Aron 1997 三十六題的 26 題。破冰池從 14 擴到 51。"],
+  ["1.5", "統計面板三個區塊可摺疊、清單加密；追問提示改成有色塊的獨立區。"],
+  ["1.4", "版本號改成按鈕，點開看使用統計與更新紀錄。"],
+  ["1.3", "破冰模式（14 題精選）、「不要這題／好用」標記、137 題全加上追問提示。"],
+  ["1.2", "「全部開啟」「重新洗牌」改成實心按鈕；加上版本號。"],
+  ["1.1", "加入全開與重置；選單邏輯收斂成單一路徑。"],
+  ["1.0", "137 題、依關係深度分七層、不重複抽牌袋、上一題、層級記憶。"],
+];
+
+const LEVELS = [
+  { id:1, name:"初識",   note:"陌生人也能答，破冰用。" },
+  { id:2, name:"朋友以上", note:"需要一點信任，別在第一次見面問。" },
+  { id:3, name:"價值觀",  note:"隨時可切，但需要對的氣氛。" },
+  { id:4, name:"深度",    note:"信任建立後才問，而且不要連問兩題。" },
+  { id:5, name:"關係內",  note:"多數需要「我們」已經存在。" },
+  { id:6, name:"婚姻家庭", note:"規劃層級的題，適合已經在談未來的關係。" },
+  { id:7, name:"性",      note:"只在關係穩定、雙方都放鬆的時候。" },
+];
+
+// [level, tag, question, follow-up, icebreaker?]
+const RAW = [
+[1,"喜好","你喜歡什麼動物？不喜歡什麼？","為什麼是那隻？／不喜歡的那個，有發生過什麼事嗎？",1],
+[1,"喜好","最近讀了哪本書？為什麼讀它？","讀完有改變你什麼想法嗎？／你都在什麼時候看書？",1],
+[1,"成長","小時候你希望長大後做什麼？","那個念頭是什麼時候消失的？／現在的工作跟它有一點像嗎？",1],
+[1,"工作","你做什麼工作？喜歡它什麼？","一天裡你最喜歡哪個時段？／哪一種同事最難相處？",1],
+[1,"工作","這份工作最大的挑戰是什麼？","那你都怎麼處理？／有想過換嗎？",0],
+[1,"喜好","你喜歡怎麼度假？","最近一次是什麼時候？／你比較喜歡排行程還是隨便走？",1],
+[1,"旅行","現在最想去哪裡？為什麼？","什麼時候開始想去的？／實際上什麼在擋著？",1],
+[1,"旅行","如果可以，你最想住在哪裡？為什麼？","你去過嗎？／現在住的地方哪裡不夠好？",1],
+[1,"喜好","你養過寵物嗎？最愛哪一隻？","牠有什麼壞習慣？／當初怎麼決定要養的？",1],
+[1,"生活","現實一點說，什麼事會讓你開心一整天？","上一次是什麼時候？／那什麼事會直接毀掉你一天？",1],
+[1,"喜好","你最熱愛什麼？怎麼開始有興趣的？","有沒有哪一刻讓你決定認真投入？／身邊有人跟你一樣嗎？",1],
+[1,"價值","你最欣賞誰？為什麼？","你有想變成那樣嗎？／他身上有你學不來的部分嗎？",1],
+[1,"金錢","如果中了樂透會做什麼？還會繼續上班嗎？","第一筆錢會花在哪？／多少錢你才會辭職？",1],
+[1,"想像","如果要寫一本書，你會寫什麼？","為什麼是那個題目？／你寫過東西嗎？",1],
+[1,"想像","想成名嗎？為什麼？","你能接受被陌生人認出來嗎？／你想被什麼事情記得？",0],
+[1,"社會","你覺得最近社會上什麼事重要？","你會因為它改變什麼嗎？／身邊的人怎麼看？",0],
+[1,"旅行","浪漫的度假算是你生活的一部分嗎？","你覺得什麼樣算浪漫？／最浪漫的一次旅行是？",0],
+
+[2,"人際","你最好的朋友是誰？為什麼是他？","你們怎麼認識的？／你們多久沒見了？",1],
+[2,"成長","你生命中最早的記憶是什麼？","那時候幾歲？／你確定是自己記得，還是聽家人講的？",0],
+[2,"目標","接下來一年的目標是什麼？打算怎麼做到？","第一步是什麼？／什麼最可能讓它卡住？",0],
+[2,"目標","以前年初訂的目標，有實現過嗎？","沒達成的那次卡在哪？／你現在還會訂目標嗎？",0],
+[2,"工作","你是怎麼選上現在這份工作的？","當時有其他選項嗎？／回頭看會選一樣的嗎？",0],
+[2,"成長","對自己的學歷滿意嗎？","有想過再唸嗎？／它實際上幫到你多少？",0],
+[2,"情緒","沮喪的時候你會做什麼？怎麼走出來？","有人幫得上忙嗎，還是你需要自己待著？／最近一次是什麼事？",0],
+[2,"人際","陷入困境的時候，你會找誰商量？","為什麼是他？／你會全部講，還是只講一部分？",0],
+[2,"情緒","你怎麼壓住怒火的？有造成過麻煩嗎？","什麼事最容易惹到你？／你事後會道歉嗎？",0],
+[2,"自我","不談職業和感情狀態，描述一下你自己。","這是你想成為的樣子，還是你本來的樣子？／別人會同意嗎？",0],
+[2,"自我","成長過程中，你覺得自己有什麼優點？","這是天生的還是後來練的？／誰最先看出來的？",0],
+[2,"自我","有什麼缺點是你自己也會害怕的？","它害你失去過什麼嗎？／你有在處理它嗎？",0],
+[2,"家庭","你的成長家庭是什麼樣子？","家裡誰說了算？／你跟誰最像？",0],
+[2,"情緒","什麼事會讓你難過？","你會讓別人知道嗎？／難過的時候你想要人陪還是不要？",0],
+[2,"自我","你浪漫嗎？怎麼個浪漫法？","你做過最浪漫的一件事？／別人對你浪漫的時候你會怎樣？",0],
+[2,"自我","你覺得自己跟別人哪裡不一樣？","這件事讓你辛苦過嗎？／你希望一樣一點嗎？",0],
+[2,"生活","去年印象最深的一件好事是什麼？壞事呢？","它改變了什麼？／今年呢？",0],
+[2,"成長","到目前為止，生活中最大的成就是什麼？","當時有人知道嗎？／你自己滿意嗎？",0],
+[2,"成長","那最大的挫折呢？","你花多久走出來？／現在回看還算挫折嗎？",0],
+
+[3,"信念","你相信神嗎？對神明有什麼看法？","你家裡的人信嗎？／有過什麼事讓你動搖？",0],
+[3,"信念","你相信世上有鬼嗎？","你遇過嗎？／你怕嗎？",0],
+[3,"信念","你覺得動物有靈魂嗎？","那你怎麼看吃肉這件事？／你養過的那隻呢？",0],
+[3,"金錢","你覺得錢最重要的功能是什麼？","你是怎麼學會用錢的？／你會為了錢做不喜歡的事嗎？",0],
+[3,"金錢","如果金錢不再是目標，你最大的追求會是什麼？","現在有在做一點嗎？／是什麼在擋？",0],
+[3,"金錢","你在借貸、負債這件事上有什麼原則？","你借過人錢嗎？／有沒有後悔過？",0],
+[3,"道德","撿到一個錢包你會怎麼做？","如果裡面有五萬呢？／你撿過嗎？",0],
+[3,"道德","把辦公室的筆或便條紙帶回家算偷竊嗎？","那界線在哪？／你看過同事做更誇張的嗎？",0],
+[3,"道德","你覺得謊言有分寸嗎？","你上次說謊是為了什麼？／你比較怕說謊還是怕被騙？",0],
+[3,"道德","什麼時候該保守秘密？為什麼？","你有守不住的經驗嗎？／有沒有秘密是你後悔守住的？",0],
+[3,"道德","簡述一下你的道德價值觀。","這是誰教你的？／有哪一條你自己也常違反？",0],
+[3,"自我","你認為誰在為你的生活負責？","這個答案一直都一樣嗎？／有沒有哪段時間你覺得不是自己？",0],
+[3,"自我","如果完全不能指望任何人，你的生活會有哪些改變？","現在你其實靠著誰？／你自己有被誰靠著嗎？",0],
+[3,"價值","成功的人為什麼成功？你的看法是？","你覺得運氣佔幾成？／照這個標準你算成功嗎？",0],
+[3,"信念","支撐你的信念是什麼？","它被動搖過嗎？／是從哪裡來的？",0],
+[3,"道德","對某人有偏見的時候，你心裡是怎麼想的？","你有被推翻過偏見的經驗嗎？／你會說出來還是放心裡？",0],
+[3,"價值","要捐款給慈善的話，你會捐給哪個領域？","為什麼是那個？／你捐過嗎？",0],
+[3,"價值","你做過最無私的一件事是什麼？","對方知道嗎？／你當下在想什麼？",0],
+[3,"兩性","你覺得男生和女生有什麼不同？","你覺得那是天生的還是教出來的？／你身邊有例外嗎？",0],
+[3,"兩性","你是怎麼學到「身為男性／女性該有什麼樣子」的？","誰教的？／你認同嗎？",0],
+[3,"關係","你希望發展出什麼樣的關係？","你有過接近那樣的關係嗎？／差在哪？",0],
+[3,"社會","你覺得個人的行為，在多大範圍內能改變社會？","你做過什麼嗎？／你覺得無力的時候多嗎？",0],
+
+[4,"脆弱","你人生中最後悔的事是什麼？","如果重來你會怎麼做？／你跟別人講過嗎？",0],
+[4,"脆弱","犯過最大的錯誤是什麼？它怎麼改變了你？","你原諒自己了嗎？／有人因此離開嗎？",0],
+[4,"脆弱","最讓你感到羞恥的事是什麼？為什麼？","現在講起來還會嗎？／有人知道嗎？",0],
+[4,"脆弱","你最害怕什麼？","從什麼時候開始的？／你會避開它還是面對它？",0],
+[4,"自我","你最希望改變自己的什麼？","試過嗎？／如果改了，你還是你嗎？",0],
+[4,"家庭","你家最大的「公開的秘密」是什麼？","大家為什麼不講？／你什麼時候知道的？",0],
+[4,"價值","你人生中最重要的事是什麼？","你花最多時間在它上面嗎？／這個答案十年前一樣嗎？",0],
+[4,"父母","說說你爸媽的婚姻，你覺得最好和最糟的分別是哪部分？","你想複製哪一部分？／哪一部分你決心避開？",0],
+[4,"父母","他們養你的時候，家裡誰管錢？","那有造成過什麼衝突嗎？／你現在的用錢方式像誰？",0],
+[4,"父母","你打算怎麼照顧年老的父母？","你跟兄弟姊妹談過嗎？／你爸媽自己怎麼想？",0],
+[4,"父母","你覺得有必要把父母送進養老院嗎？","如果是你自己老了呢？／你身邊有人這樣做嗎？",0],
+[4,"父母","你不經意做的哪件事最讓父母開心？","你是後來才知道的嗎？／你現在還會做嗎？",0],
+[4,"生死","親友中誰最先過世？當時你的感受是什麼？","你那時候幾歲？／你有好好道別嗎？",0],
+[4,"生死","你覺得死亡的時候會發生什麼？","這個想法讓你比較安心還是不安？／你想過自己的葬禮嗎？",0],
+[4,"生死","如果生命只剩一天，你會怎麼過？","那為什麼現在不做？／你會先告訴誰？",0],
+[4,"生死","你希望死後別人怎麼評價你？","現在的你離那句話多遠？／你希望誰說出那句話？",0],
+[4,"生死","最想活在哪一歲？為什麼？","那一年發生了什麼？／你想回去改什麼嗎？",0],
+[4,"生死","你覺得人幾歲開始變老？它怎麼改變人的生活？","你覺得自己開始了嗎？／你怕老嗎？",0],
+
+[5,"我們","我哪一點最吸引你？","是一開始就這樣，還是後來才發現的？",0],
+[5,"我們","你第一次吻我之前在想什麼？","你緊張嗎？／你有猶豫過嗎？",0],
+[5,"我們","我第一次約你出來的時候，你考慮過拒絕嗎？","什麼讓你決定答應？",0],
+[5,"我們","你是什麼時候發覺愛上我的？","那天發生了什麼？／你有馬上說嗎？",0],
+[5,"我們","如果能改變我一個地方，會是什麼？","你忍多久了？／你希望我怎麼改？",0],
+[5,"我們","我做過哪件事很讓你生氣？","你當時有說嗎？／現在還在意嗎？",0],
+[5,"我們","我讓你難堪過嗎？","是在別人面前嗎？／你希望我當時怎麼做？",0],
+[5,"我們","你是怎麼察覺我在生氣的？","我自己知道嗎？／你會先開口還是等我？",0],
+[5,"我們","你覺得我能傷你最深的一件事會是什麼？","有人對你做過嗎？／你會怎麼反應？",0],
+[5,"我們","我做的哪道菜你已經吃膩了？","你是體貼還是懶得講？／那你想吃什麼？",0],
+[5,"我們","如果我想在餐桌上給你一個驚喜，你希望是哪道菜？","那道菜對你有什麼故事嗎？",0],
+[5,"我們","你最希望我向你坦白什麼？","你其實已經猜到了嗎？／你確定你想知道嗎？",0],
+[5,"我們","如果你可以問我一個問題，你會問什麼？","你憋這題多久了？",0],
+[5,"我們","你第一次見我爸媽時的感想是什麼？","哪一刻你最緊張？／你覺得他們喜歡你嗎？",0],
+[5,"我們","描述一下我的味道。","你什麼時候開始注意到的？",0],
+[5,"感情觀","你覺得是性還是感情在維持一段好的戀情？","你是從經驗還是從觀察得到這個結論的？",0],
+[5,"感情觀","給愛情下個定義。","這個定義你自己做得到嗎？",0],
+[5,"感情觀","你覺得男人的愛和女人的愛不同嗎？","你身邊有反例嗎？",0],
+[5,"感情觀","身為男性（女性），你覺得對方最需要知道的是什麼？","你有講過嗎？對方聽懂了嗎？",0],
+[5,"感情觀","你覺得戀愛中誰會佔主導？為什麼？","你自己是哪一邊？／你喜歡這樣嗎？",0],
+[5,"感情觀","什麼會讓你斬斷情絲？","你做過一次嗎？／那次你花多久？",0],
+[5,"感情觀","描述一下你心中完美的約會。","你經歷過最接近的一次是什麼？",0],
+[5,"感情觀","你的第一次約會是誰「教」你的？","那時候你聽話嗎？／現在看那個建議如何？",0],
+[5,"感情觀","一個人去度假、另一個人在家，你會怎麼想？","你會希望對方主動報備嗎？",0],
+[5,"感情觀","網戀算真正的戀愛嗎？","你自己有過嗎？／見面之後呢？",0],
+[5,"兩難","朋友偷吃，你覺得「應該」告訴他的伴侶嗎？","為什麼？",0],
+[5,"兩難","那你「實際上」會告訴嗎？","如果這兩個答案不一樣，中間差的是什麼？",0],
+[5,"過去","初戀時你多大？","怎麼結束的？／你們還有聯絡嗎？",0],
+[5,"過去","初吻是幾歲？","你還記得當下的感覺嗎？",0],
+
+[6,"婚姻","什麼因素會讓你決定結婚？你怎麼確定人選和時機？","你身邊誰的婚姻是你想要的樣子？",0],
+[6,"婚姻","婚姻對你來說最重要的是什麼？","如果只剩這一項，其他都沒有，你還要嗎？",0],
+[6,"婚姻","你覺得一夫一妻制重要嗎？","你覺得它是道德問題還是現實問題？",0],
+[6,"婚姻","你心中完美的婚禮是什麼樣子？","那是為誰辦的，你自己還是家人？",0],
+[6,"婚姻","夫妻該財務獨立嗎？還是誰掌握經濟大權？","你爸媽是怎麼處理的？",0],
+[6,"婚姻","婚姻裡，個人該有多少獨處時間？","你需要多少？／你知道對方需要多少嗎？",0],
+[6,"婚姻","你對墮胎的看法是什麼？","你覺得誰該做最後決定？",0],
+[6,"婚姻","宗教信仰對婚姻影響大嗎？","如果信仰不同你能接受嗎？",0],
+[6,"婚姻","婚姻諮商有效嗎？為什麼？","你會願意去嗎？／你覺得什麼時候該去？",0],
+[6,"小孩","婚後會要小孩嗎？","幾個？／如果對方想法不同呢？",0],
+[6,"小孩","什麼因素會讓你決定要一個小孩？","經濟佔多少比重？",0],
+[6,"小孩","婚後誰帶小孩？","你願意為此暫停工作嗎？",0],
+[6,"小孩","你會怎麼培養孩子的價值觀？","哪一條是你一定要教的？",0],
+[6,"小孩","你怎麼看花在孩子身上的開銷？","你小時候家裡怎麼花在你身上？",0],
+[6,"小孩","你覺得自己該在孩子的教育中扮演什麼角色？","你想像中你會像你爸媽嗎？",0],
+[6,"小孩","誰該對孩子做性教育？在孩子多大的時候？","你自己是怎麼學到的？",0],
+[6,"離婚","離婚對夫妻雙方各有什麼影響？","你身邊有例子嗎？",0],
+[6,"離婚","你覺得孩子是離婚的受害者嗎？","那不離婚呢？",0],
+[6,"離婚","離婚後，父母該做什麼讓孩子適應？","你覺得該說實話到什麼程度？",0],
+
+[7,"性","你還有什麼沒實現的性幻想嗎？","什麼原因一直沒說？",0],
+[7,"性","你自慰嗎？","你覺得這件事在關係裡需要避開嗎？",0],
+[7,"性","多久親熱一次算不頻繁？","我們現在的頻率你滿意嗎？",0],
+[7,"性","做過春夢嗎？說說看。","醒來的時候你在想什麼？",0],
+[7,"性","初夜是什麼時候？","跟你想像的差多少？",0],
+[7,"性","嘗試過與同性親熱嗎？你怎麼看同性戀？","你身邊有出櫃的朋友嗎？",0],
+[7,"性","我不說的時候，你怎麼知道我想親熱？","你會直接回應還是裝沒發現？",0],
+[7,"性","你在洗手間的時候我進去，你會怎麼想？","那你覺得哪些界線是不能跨的？",0],
+[7,"性","我們上次一起洗澡是什麼時候？","你想要更常一點嗎？",0],
+[7,"性","熱戀中還會注意其他異性，你覺得妥當嗎？婚後會改變嗎？","你覺得界線在哪裡？",0],
+[7,"性","看到一個異性，你最先注意的是哪個部位？","那是你會被吸引的原因嗎？",0],
+[7,"性","第一次面對彼此裸體的時候，你擔心過什麼嗎？","現在還會嗎？",0],
+[7,"性","親熱時你最想要我的哪一招？","有什麼是你想要但沒開口的？",0],
+
+/* ── v1.6 新增：輕鬆題 ───────────────────────────── */
+[1,"好玩","你手機桌布是什麼？為什麼是那張？","上一張是什麼？／你多久換一次？",1],
+[1,"好玩","有什麼事你比身邊九成九的人在行，但完全沒用？","怎麼練成的？／有派上用場過嗎？",1],
+[1,"好玩","你最近一次笑到不行是為了什麼？","當時跟誰？／現在講還好笑嗎？",1],
+[1,"好玩","你有什麼奇怪但堅持的小習慣？","從什麼時候開始的？／被人說過嗎？",1],
+[1,"好玩","你手機裡最舊的一張照片是什麼？","為什麼還留著？",1],
+[1,"好玩","如果要選一首歌當你的出場音樂，你選哪首？","為什麼是那首？／你會怎麼走進來？",1],
+[1,"好玩","你最不想再吃的一道菜是什麼？","發生過什麼事嗎？",1],
+[1,"好玩","你有什麼「其實很爛但我就是喜歡」的東西？","你會在別人面前承認嗎？",1],
+[1,"好玩","你上次為了很蠢的事生氣是什麼時候？","你後來自己覺得好笑嗎？",1],
+[1,"好玩","你最擅長和最不會的家事分別是什麼？","不會的那件你會逃避嗎？",1],
+[1,"好玩","如果你的人生要拍成電影，誰演你？","那會是什麼類型的片？",1],
+[1,"好玩","你身上有沒有哪個疤或痕跡有故事？","說說看／你還記得痛嗎？",1],
+[1,"好玩","你小時候最怕的東西是什麼？現在還怕嗎？","為什麼開始怕的？",1],
+[1,"好玩","你覺得自己最不值錢的一個才能是什麼？","有人欣賞過嗎？",1],
+[1,"好玩","你上一次做蠢事是什麼時候？","有人看到嗎？",1],
+[1,"好玩","你最喜歡的便利商店組合是什麼？","多久吃一次？／有什麼你絕對不碰？",1],
+[1,"好玩","你有沒有自己都沒發現的口頭禪？","誰先發現的？",1],
+[1,"好玩","你的購物車裡現在躺著什麼還沒結帳的東西？","放多久了？／為什麼不買？",1],
+[1,"好玩","如果可以把一種食物變成零卡，你選什麼？","你會吃多少？",1],
+[1,"好玩","你有什麼「絕對不能忍受」的小事？","有人踩過嗎？",1],
+[1,"好玩","你最近一次熬夜是為了什麼？","值得嗎？",1],
+[1,"好玩","如果要開一家店，你會開什麼？","店名叫什麼？／你真的想過嗎？",1],
+[1,"好玩","你覺得自己最像哪一種動物？","別人會同意嗎？",1],
+[1,"好玩","你最不擅長的運動是什麼？有多不擅長？","有被笑過嗎？",1],
+[1,"好玩","你有什麼東西壞了也捨不得丟？","為什麼？",1],
+[1,"好玩","如果明天不用上班，你會做什麼？誠實一點。","那為什麼現在不做？",1],
+[2,"好玩","你上一次尷尬到想鑽地洞是什麼時候？","現在講起來還會嗎？／當時誰在場？",0],
+
+/* ── v1.6 新增：當下具體題 ──────────────────────── */
+[1,"當下","你今天做的第一件事是什麼？","每天都一樣嗎？",1],
+[1,"當下","你最近在追什麼？劇、書、遊戲都算。","好看在哪？／你會推薦嗎？",1],
+[1,"當下","你這週過得怎樣？用一個詞。","為什麼是那個詞？",1],
+[1,"當下","你現在最想吃什麼？","為什麼是現在想到它？",1],
+[1,"當下","你今天有什麼事本來要做但沒做？","每天都這樣嗎？",1],
+[1,"當下","你上一次覺得「這錢花得值得」是買了什麼？","多少錢？／會再買嗎？",1],
+
+/* ── v1.6 新增：假設情境題 ──────────────────────── */
+[1,"假設","明天醒來你多了一種超能力，你要哪一種？","你會拿它來做什麼？",1],
+[1,"假設","你可以跟任何一個人吃一頓飯，活的死的都行，你選誰？","你會問他什麼？",1],
+[2,"假設","你可以無痛刪掉一段記憶，你會刪哪段？","刪掉之後，你還是你嗎？",0],
+[2,"假設","你可以回到過去看一件事，但不能改變它，你要看哪件？","為什麼是那件？",0],
+[2,"假設","你可以活到九十歲，但最後六十年要嘛身體停在三十、要嘛心智停在三十，你選哪個？","為什麼？",0],
+[2,"假設","你可以一鍵換掉自己的一個性格，你換哪個？","你確定換了會比較好嗎？",0],
+[2,"假設","你中了一筆錢，剛好夠你不工作五年。這五年你會怎麼過？","那第六年呢？",0],
+[3,"假設","有一顆水晶球，能告訴你關於自己、人生或未來的任何真相，你想問什麼？","你確定你想知道嗎？",0],
+[3,"假設","家裡失火，人和寵物都安全了，你能再回去拿一樣東西，你拿什麼？","為什麼是它？",0],
+
+/* ── v1.6 新增：改寫自 Aron 1997 的 36 題 ────────── */
+[1,"36問","對你來說，什麼叫「完美的一天」？","你上次接近它是什麼時候？",1],
+[1,"36問","你上一次唱歌給自己聽是什麼時候？給別人聽呢？","你會在誰面前唱？",1],
+[1,"36問","你打電話之前會先想好要講什麼嗎？","為什麼？／哪一種電話最難打？",1],
+[2,"36問","用四分鐘講你的人生故事，愈詳細愈好。","你為什麼從那裡開始講？",0],
+[2,"36問","你這輩子最感激的是什麼？","你跟對方說過嗎？",0],
+[2,"36問","如果可以改變自己成長的方式，你會改什麼？","那會讓你變成不一樣的人嗎？",0],
+[2,"36問","有沒有什麼事你夢想很久卻一直沒做？為什麼沒做？","現在的阻礙跟當初一樣嗎？",0],
+[2,"36問","你最珍貴的一段回憶是什麼？","當時你知道它會變成最珍貴的嗎？",0],
+[2,"36問","你最重視朋友的哪一點？","你自己做得到嗎？",0],
+[2,"36問","友誼對你來說是什麼？","你現在有那樣的朋友嗎？",0],
+[2,"36問","你覺得我們兩個有哪三件事是一樣的？","哪一件最意外？",0],
+[2,"36問","講一個我的優點，我也講一個你的，各講三個。","你最先想到哪一個？",0],
+[3,"36問","愛在你的生活裡佔什麼位置？","這個答案幾年前一樣嗎？",0],
+[3,"36問","對你來說，有什麼事嚴肅到不能拿來開玩笑？","有人開過那個玩笑嗎？",0],
+[3,"36問","我們各講三句「我們……」開頭的真話。","你講的那三句，哪一句最難說出口？",0],
+[3,"36問","完成這句話：「我希望有一個人可以跟我一起……」","你有過嗎？",0],
+[2,"36問","如果我們要變成好朋友，你覺得有什麼是我應該先知道的？","為什麼是那件？",0],
+[3,"36問","講一個你人生裡的問題，然後問我覺得你該怎麼處理。","你其實已經有答案了嗎？",0],
+[4,"36問","你最糟的一段回憶是什麼？","你跟誰講過？",0],
+[4,"36問","如果你知道自己一年後會突然死掉，你的生活會改變什麼？","那為什麼不現在就改？",0],
+[4,"36問","你最近一次在別人面前哭是什麼時候？自己一個人哭呢？","那兩次差別在哪？",0],
+[4,"36問","你覺得自己的童年比多數人幸運嗎？","哪一部分讓你這樣覺得？",0],
+[4,"36問","說說你和母親的關係。","你們像嗎？／有什麼你一直沒對她說？",0],
+[4,"36問","如果你今晚就會死，而且不能跟任何人聯絡，你最後悔沒告訴誰什麼？","為什麼到現在還沒說？",0],
+[4,"36問","你的家人裡，誰過世會讓你最難過？為什麼？","你有為此做過什麼準備嗎？",0],
+[5,"36問","你已經喜歡上我哪一點了？","是什麼時候開始的？",0],
+
+/* ── v1.7 新增 ──────────────────────────────────── */
+[6,"婚姻","婚後你能接受跟對方的父母同住嗎？","如果只能住一段時間呢？／你自己的父母那邊呢？",0],
+
+[7,"性","你覺得我們在這件事上溝通得夠嗎？有什麼想說卻一直沒說的？","是不好意思，還是怕我的反應？",0],
+[7,"性","你希望我怎麼開口，你比較不會有壓力？","我現在的方式讓你為難過嗎？",0],
+[7,"性","你會怎麼讓我知道你不想要？我接收得到嗎？","有沒有哪次我其實沒讀到？",0],
+[7,"性","有什麼是你以前喜歡、現在其實不喜歡了？","什麼時候變的？／你為什麼沒說？",0],
+[7,"性","我們之間有什麼已經變成例行公事了？","你想換掉它還是拿掉它？",0],
+[7,"性","你覺得色情內容影響過你的期待嗎？","你什麼時候發現落差的？",0],
+[7,"性","什麼樣的氣氛最能讓你真的放鬆？","我們上次那樣是什麼時候？",0],
+];
+
+const DECK = RAW.map(([lv, tag, q, fu, ice], i) => ({ id: i, lv, tag, q, fu, ice: !!ice }));
+const FAV_WEIGHT = 3;
+
+const store = {
+  get(k, fb) { try { const v = JSON.parse(localStorage.getItem("td." + k)); return v ?? fb; } catch (e) { return fb; } },
+  set(k, v) { try { localStorage.setItem("td." + k, JSON.stringify(v)); } catch (e) {} },
+};
+
+const el = {};
+["levels","ice","all","allLabel","reset","status","statusText","restore",
+ "card","badge","tag","note","q","follow","skip","fav","draw","back","count","ver",
+ "sheetwrap","backdrop","closeSheet","sheetbody","now"]
+  .forEach(id => el[id] = document.getElementById(id));
+el.ver.textContent = "v" + VERSION;
+
+const DEFAULT_LEVELS = [1, 2, 3, 4];
+let active  = new Set(store.get("levels", DEFAULT_LEVELS));
+let skipped = new Set(store.get("skipped", []));
+let favs    = new Set(store.get("favs", []));
+let iceMode = false;
+let bag = [], history = [], current = null;
+
+let stats = store.get("stats", null);
+if (!stats || typeof stats !== "object") {
+  stats = { draws: 0, byLevel: {}, ice: 0, since: new Date().toISOString().slice(0, 10) };
+  store.set("stats", stats);
+}
+stats.byLevel = stats.byLevel || {};
+
+if (!active.size) active = new Set(DEFAULT_LEVELS);
+
+/* ---------- level chips ---------- */
+const chips = LEVELS.map(L => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.type = "button";
+  b.style.setProperty("--c", `var(--lv${L.id})`);
+  b.innerHTML = `<span class="dot"></span><span class="lv">L${L.id}</span>${L.name}`;
+  b.addEventListener("click", () => {
+    active.has(L.id) ? active.delete(L.id) : active.add(L.id);
+    store.set("levels", [...active]);
+    applyLevels();
+  });
+  el.levels.appendChild(b);
+  return b;
+});
+
+/* ---------- deck plumbing ---------- */
+function pool() {
+  const base = iceMode
+    ? DECK.filter(d => d.ice)
+    : DECK.filter(d => active.has(d.lv));
+  return base.filter(d => !skipped.has(d.id));
+}
+
+function refill() {
+  const p = pool();
+  const out = [];
+  p.forEach(d => {
+    const n = favs.has(d.id) ? FAV_WEIGHT : 1;
+    for (let i = 0; i < n; i++) out.push(d);
+  });
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  if (current && out.length > 1 && out[out.length - 1].id === current.id) {
+    [out[0], out[out.length - 1]] = [out[out.length - 1], out[0]];
+  }
+  bag = out;
+}
+
+function draw() {
+  if (!pool().length) { current = null; render(); return; }
+  if (!bag.length) refill();
+  if (current) { history.push(current); if (history.length > 40) history.shift(); }
+  let next = bag.pop();
+  while (next && next.id === current?.id && bag.length) next = bag.pop();
+  current = next || null;
+  if (current) {
+    stats.draws++;
+    stats.byLevel[current.lv] = (stats.byLevel[current.lv] || 0) + 1;
+    if (iceMode) stats.ice++;
+    store.set("stats", stats);
+  }
+  render();
+}
+
+function applyLevels() {
+  chips.forEach((b, i) => b.setAttribute("aria-pressed", active.has(LEVELS[i].id)));
+  el.allLabel.textContent = active.size === LEVELS.length ? "回到 L1–L4" : "全部開啟";
+  el.levels.classList.toggle("off", iceMode);
+  el.ice.setAttribute("aria-pressed", iceMode);
+  refill();
+  if (!current || !pool().some(d => d.id === current.id)) draw();
+  else render();
+}
+
+/* ---------- render ---------- */
+function render() {
+  el.back.disabled = history.length === 0;
+  el.status.hidden = skipped.size === 0;
+  if (skipped.size) el.statusText.textContent = `已隱藏 ${skipped.size} 題`;
+
+  const p = pool();
+  if (!current) {
+    el.card.style.setProperty("--c", "var(--line-2)");
+    el.badge.textContent = ""; el.tag.textContent = ""; el.note.textContent = "";
+    el.follow.textContent = ""; el.count.textContent = "";
+    el.skip.disabled = true; el.fav.disabled = true;
+    el.q.innerHTML = `<span class="empty">${
+      skipped.size && !p.length ? "這個範圍的題都被你隱藏了。" : "上面至少選一個層級。"
+    }</span>`;
+    return;
+  }
+
+  el.skip.disabled = false; el.fav.disabled = false;
+  const L = LEVELS[current.lv - 1];
+  const c = `var(--lv${current.lv})`;
+  el.card.style.setProperty("--c", c);
+  el.badge.style.setProperty("--c", c);
+  el.badge.innerHTML = `L${L.id}<b>${L.name}</b>`;
+  el.tag.textContent = current.tag;
+  el.note.textContent = iceMode ? "破冰模式：面對面卡住時最好接的題。" : L.note;
+  el.q.textContent = current.q;
+  el.follow.innerHTML = `<span>接著問</span>${current.fu}`;
+  el.fav.setAttribute("aria-pressed", favs.has(current.id));
+  el.count.textContent = `剩 ${bag.length} / ${p.length} 題`;
+
+  el.q.classList.remove("anim"); void el.q.offsetWidth; el.q.classList.add("anim");
+}
+
+/* ---------- controls ---------- */
+el.ice.addEventListener("click", () => { iceMode = !iceMode; current = null; history = []; applyLevels(); });
+
+el.all.addEventListener("click", () => {
+  if (iceMode) { iceMode = false; }
+  active = active.size === LEVELS.length ? new Set(DEFAULT_LEVELS) : new Set(LEVELS.map(L => L.id));
+  store.set("levels", [...active]);
+  applyLevels();
+});
+
+el.reset.addEventListener("click", () => { history = []; current = null; refill(); draw(); });
+
+el.restore.addEventListener("click", (e) => {
+  e.stopPropagation();
+  skipped.clear(); store.set("skipped", []);
+  refill(); render();
+});
+
+el.skip.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (!current) return;
+  skipped.add(current.id); favs.delete(current.id);
+  store.set("skipped", [...skipped]); store.set("favs", [...favs]);
+  bag = bag.filter(d => d.id !== current.id);
+  history = history.filter(d => d.id !== current.id);
+  current = null;
+  draw();
+});
+
+el.fav.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (!current) return;
+  favs.has(current.id) ? favs.delete(current.id) : favs.add(current.id);
+  store.set("favs", [...favs]);
+  el.fav.setAttribute("aria-pressed", favs.has(current.id));
+});
+
+/* ---------- stats sheet ---------- */
+function esc(s) {
+  return String(s).replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]));
+}
+
+function qlist(ids) {
+  if (!ids.length) return `<p class="none">還沒有標記。抽到順口的題就按卡片下面的「好用」。</p>`;
+  return `<ul class="qlist">` + ids
+    .map(id => DECK[id]).filter(Boolean)
+    .sort((a, b) => a.lv - b.lv || a.id - b.id)
+    .map(d => `<li><span class="l" style="--c:var(--lv${d.lv})">L${d.lv}</span><span>${esc(d.q)}</span></li>`)
+    .join("") + `</ul>`;
+}
+
+function renderSheet() {
+  const favIds = [...favs], skipIds = [...skipped];
+  const dist = LEVELS
+    .filter(L => stats.byLevel[L.id])
+    .map(L => `<i style="--c:var(--lv${L.id})">L${L.id} ${stats.byLevel[L.id]}</i>`)
+    .join("");
+
+  el.now.textContent = `v${VERSION}　${new Date().toISOString().slice(0, 10)}`;
+  el.sheetbody.innerHTML = `
+    <div class="block">
+      <div class="tiles">
+        <div class="tile"><b>${stats.draws}</b><span>總抽題次數</span></div>
+        <div class="tile"><b>${favIds.length}</b><span>標記好用</span></div>
+        <div class="tile"><b>${skipIds.length}</b><span>已隱藏</span></div>
+      </div>
+      <div class="dist">
+        ${dist || `<i style="--c:var(--line-2)">尚無紀錄</i>`}
+        ${stats.ice ? `<i style="--c:var(--lv1)">破冰 ${stats.ice}</i>` : ""}
+      </div>
+      <p class="none" style="margin-top:9px">題庫 ${DECK.length} 題　·　資料起算 ${stats.since}　·　只存在這台裝置的瀏覽器</p>
+    </div>
+
+    <div class="block">
+      <details open>
+        <summary><h2 class="sh">標記好用 (${favIds.length})</h2></summary>
+        ${qlist(favIds)}
+      </details>
+    </div>
+
+    <div class="block">
+      <details>
+        <summary><h2 class="sh">已隱藏 (${skipIds.length})</h2></summary>
+        ${skipIds.length ? qlist(skipIds) : `<p class="none">沒有隱藏任何題目。</p>`}
+      </details>
+    </div>
+
+    <div class="block">
+      <details>
+        <summary><h2 class="sh">版本紀錄</h2></summary>
+        <ul class="log">
+          ${CHANGELOG.map(([v, d]) =>
+            `<li><span class="v${v === VERSION ? " cur" : ""}">${v}</span><span class="d">${esc(d)}</span></li>`
+          ).join("")}
+        </ul>
+        <button class="danger" id="wipe" type="button">清空所有統計與標記</button>
+      </details>
+    </div>
+  `;
+
+  document.getElementById("wipe").addEventListener("click", () => {
+    const b = document.getElementById("wipe");
+    if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "再按一次確認清空"; return; }
+    favs.clear(); skipped.clear();
+    stats = { draws: 0, byLevel: {}, ice: 0, since: new Date().toISOString().slice(0, 10) };
+    store.set("favs", []); store.set("skipped", []); store.set("stats", stats);
+    refill(); render(); renderSheet();
+  });
+}
+
+function openSheet() { renderSheet(); el.sheetwrap.hidden = false; el.closeSheet.focus(); }
+function closeSheet() { el.sheetwrap.hidden = true; el.ver.focus(); }
+
+el.ver.addEventListener("click", openSheet);
+el.closeSheet.addEventListener("click", closeSheet);
+el.backdrop.addEventListener("click", closeSheet);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !el.sheetwrap.hidden) closeSheet(); });
+
+el.draw.addEventListener("click", draw);
+el.card.addEventListener("click", draw);
+el.back.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const prev = history.pop();
+  if (prev) { if (current) bag.push(current); current = prev; render(); }
+});
+document.addEventListener("keydown", (e) => {
+  if ((e.key === " " || e.key === "Enter") && el.sheetwrap.hidden && document.activeElement === document.body) {
+    e.preventDefault(); draw();
+  }
+});
+
+applyLevels();
+</script>
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
