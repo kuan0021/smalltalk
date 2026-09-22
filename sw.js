@@ -1,5 +1,5 @@
 // 隨機話題產生器 — 離線快取
-const CACHE = "topics-v1.9";
+const CACHE = "topics-v1.10";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest",
                 "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
 

@@ -187,6 +187,23 @@
   #fav[aria-pressed="true"] { color: var(--gold); border-color: var(--gold); background: var(--gold-bg); }
   .swipe { flex: 1 1 auto; text-align: center; font-size: 10.5px; color: var(--ink-3); }
 
+  .qtext {
+    cursor: copy; -webkit-user-select: text; user-select: text;
+    border-radius: 3px; transition: background .2s, color .2s;
+    -webkit-touch-callout: default;
+  }
+  .qtext.copied { background: color-mix(in srgb, var(--c) 14%, transparent); }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%); z-index: 60;
+    background: var(--ink); color: var(--bg);
+    font-size: 13px; font-weight: 500; letter-spacing: .03em;
+    padding: 9px 16px; border-radius: 999px; pointer-events: none;
+    box-shadow: 0 6px 20px -8px rgba(0,0,0,.4);
+    animation: toastin .18s ease-out;
+    max-width: calc(100% - 48px); text-align: center;
+  }
+  @keyframes toastin { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
   .anim { animation: rise .26s cubic-bezier(.2,.7,.3,1); }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .anim { animation: none; } .card:active { transform: none; } }
@@ -363,7 +380,7 @@
             <path d="M2.5 2.5l6 6M8.5 2.5l-6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
           </svg>不要這題
         </button>
-        <span class="swipe">點卡片換下一題</span>
+        <span class="swipe">點題目複製・點空白換題</span>
         <button class="act" id="fav" type="button" aria-pressed="false">
           <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
             <path d="M6 .8l1.6 3.3 3.6.5-2.6 2.5.6 3.6L6 9l-3.2 1.7.6-3.6L.8 4.6l3.6-.5z"/>
@@ -386,6 +403,8 @@
   </footer>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
 <div class="sheetwrap" id="sheetwrap" hidden>
   <div class="backdrop" id="backdrop"></div>
   <div class="sheet" role="dialog" aria-modal="true" aria-label="使用統計與版本紀錄">
@@ -403,9 +422,10 @@
 </div>
 
 <script>
-const VERSION = "1.9";
+const VERSION = "1.10";
 
 const CHANGELOG = [
+  ["1.10", "點題目文字即可複製（手機可用）；點卡片其他地方照舊換下一題。"],
   ["1.9", "改名為隨機話題產生器。單檔版加上 UTF-8 BOM，並在 JavaScript 沒被執行時顯示說明而非空白。"],
   ["1.8", "修正：統計面板與「復原」在獨立 HTML 檔中不會隱藏。另外產出可離線使用的手機版單檔。"],
   ["1.7", "L6 補到 20 題（婚後與長輩同住）、L7 補到 20 題（新增 7 題偏溝通與界線，而非動作）。"],
@@ -785,12 +805,55 @@ function render() {
   el.badge.innerHTML = `L${L.id}<b>${L.name}</b>`;
   el.tag.textContent = current.tag;
   el.note.textContent = iceMode ? "破冰模式：面對面卡住時最好接的題。" : L.note;
-  el.q.textContent = current.q;
+  el.q.innerHTML = "";
+  const qt = document.createElement("span");
+  qt.className = "qtext";
+  qt.textContent = current.q;
+  qt.title = "點一下複製";
+  qt.addEventListener("click", (e) => {
+    e.stopPropagation();
+    copyText(current.q).then(ok => {
+      if (ok) { qt.classList.add("copied"); setTimeout(() => qt.classList.remove("copied"), 700); }
+      toast(ok ? "已複製題目" : "無法自動複製，請長按題目手動複製");
+    });
+  });
+  el.q.appendChild(qt);
   el.follow.innerHTML = `<span>接著問</span>${current.fu}`;
   el.fav.setAttribute("aria-pressed", favs.has(current.id));
   el.count.textContent = `剩 ${bag.length} / ${p.length} 題`;
 
   el.q.classList.remove("anim"); void el.q.offsetWidth; el.q.classList.add("anim");
+}
+
+/* ---------- copy ---------- */
+async function copyText(t) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(t);
+      return true;
+    }
+  } catch (e) { /* 落到下面的備援 */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = t;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select(); ta.setSelectionRange(0, t.length);
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch (e) { return false; }
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.hidden = false;
+  t.style.animation = "none"; void t.offsetWidth; t.style.animation = "";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 1400);
 }
 
 /* ---------- controls ---------- */
